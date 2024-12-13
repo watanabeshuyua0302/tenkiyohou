@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天気予報アプリ</title>
+</head>
+<body style="background-color: #87CEFA; margin: 0; padding: 0; font-family: Arial, sans-serif; text-align: center;">
+
+    <h1 style="color: white; padding: 20px;">天気予報アプリ</h1>
+    <div style="margin: 20px auto; max-width: 400px; background: white; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); padding: 20px;">
+        <label for="region" style="font-weight: bold;">地域を選択してください:</label>
+        <select id="region" style="margin: 10px 0; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px;">
+            <option value="110000" data-name="東京">東京</option>
+            <option value="130000" data-name="埼玉">埼玉</option>
+            <option value="014100" data-name="釧路・根室地方">釧路・根室地方</option>
+        </select>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0; text-align: left;">
+            <thead>
+                <tr style="background-color: #4682B4; color: white;">
+                    <th colspan="2" id="region-name" style="padding: 10px; text-align: center;">地域：東京</th>
+                </tr>
+                <tr style="background-color: #B0C4DE; color: black;">
+                    <th style="padding: 10px; border: 1px solid #ddd;">日付</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">天気</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd; background-color: #F0F8FF;">今日</td>
+                    <td id="today" style="padding: 10px; border: 1px solid #ddd; background-color: #F0F8FF;">-</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd; background-color: #E6E6FA;">土曜日</td>
+                    <td id="saturday" style="padding: 10px; border: 1px solid #ddd; background-color: #E6E6FA;">-</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd; background-color: #F0F8FF;">日曜日</td>
+                    <td id="sunday" style="padding: 10px; border: 1px solid #ddd; background-color: #F0F8FF;">-</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr style="background-color: #B0C4DE;">
+                    <td colspan="2" id="update-date" style="padding: 10px; border: 1px solid #ddd; text-align: center;">データ更新日：-</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <script>
+        const apiUrls = {
+            "110000": "https://www.jma.go.jp/bosai/forecast/data/forecast/110000.json",
+            "130000": "https://www.jma.go.jp/bosai/forecast/data/forecast/130000.json",
+            "014100": "https://www.jma.go.jp/bosai/forecast/data/forecast/014100.json"
+        };
+
+        const weatherText = {
+            "100": "晴れ",
+            "101": "晴れ時々曇り",
+            "102": "晴れ時々雨",
+            "200": "曇り",
+            "201": "曇り時々晴れ",
+            "202": "曇り時々雨",
+            "300": "雨",
+            "400": "雪"
+        };
+
+        async function fetchWeather(regionCode, regionName) {
+            const apiUrl = apiUrls[regionCode];
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                const weatherCodes = data[0].timeSeries[0].areas[0].weatherCodes;
+
+                document.getElementById('today').textContent = weatherText[weatherCodes[0]] || "不明";
+                document.getElementById('saturday').textContent = weatherText[weatherCodes[1]] || "不明";
+                document.getElementById('sunday').textContent = weatherText[weatherCodes[2]] || "不明";
+                document.getElementById('region-name').textContent = `地域：${regionName}`;
+
+                const updateTime = data[0].reportDatetime;
+                const updateDate = new Date(updateTime).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+                document.getElementById('update-date').textContent = `データ更新日：${updateDate}`;
+            } catch (error) {
+                console.error('エラー:', error);
+                document.getElementById('today').textContent = "エラー";
+                document.getElementById('saturday').textContent = "エラー";
+                document.getElementById('sunday').textContent = "エラー";
+                document.getElementById('region-name').textContent = `地域：${regionName}`;
+                document.getElementById('update-date').textContent = "データ更新日：取得失敗";
+            }
+        }
+
+        fetchWeather("110000", "東京");
+
+        document.getElementById('region').addEventListener('change', (event) => {
+            const selectedOption = event.target.options[event.target.selectedIndex];
+            const regionCode = selectedOption.value;
+            const regionName = selectedOption.getAttribute("data-name");
+            fetchWeather(regionCode, regionName);
+        });
+    </script>
+</body>
+</html>
